@@ -1,25 +1,16 @@
 # RIT Digital · App web con catálogo en la nube
 
-Archivos: `index.html` (la app), `config.js` (conexión a Supabase), `sw.js` y `manifest.webmanifest` (para que abra sin señal y se instale en el celular), íconos y `supabase.sql` (base de datos).
+Reunión de Inicio de Turno (RIT) y Orden de Trabajo (OT) de MISPA en el celular, con PDF listo para imprimir.
 
-## 1. Base de datos en Supabase
-1. Entra a supabase.com y crea un proyecto (puede ser el mismo de la app de firmas: las tablas de esta app empiezan con `rit_`).
-2. Abre **SQL Editor → New query** y pega todo el contenido de `supabase.sql`.
-3. **Antes de apretar Run**, baja hasta la sección **CLAVES** y cambia las tres claves (`CAMBIA-clave-jeremy`, `CAMBIA-clave-prevencion`, `CAMBIA-clave-equipo`). Mínimo 6 caracteres.
-4. Aprieta **Run**. Debe terminar sin errores. Crea las tablas, la seguridad y carga los 21 RF, las 202 actividades y los supervisores.
+## Abrir la app
+👉 **https://jeremyandresmoreno19-dot.github.io/rit-digital/**
 
-## 2. Conectar la app
-1. En Supabase ve a **Project Settings → API** y copia la **Project URL** y la clave **anon public**.
-2. Abre `config.js` y reemplaza `https://TU-PROYECTO.supabase.co` y `TU-ANON-KEY` por esos dos datos.
-   Nunca uses la clave `service_role`.
+## Cómo está armado
+- `index.html`: la app; `config.js`: conexión a Supabase (proyecto `ujbkdhjhetechdurqsgf`, clave pública anon); `sw.js` y `manifest.webmanifest`: para que abra sin señal y se instale.
+- `sql/1-tablas.sql`: tablas, seguridad y catálogo inicial. `sql/2-claves.sql`: las tres claves (se cambian antes de ejecutar; nunca se suben con claves reales).
+- GitHub Pages publica la rama `main` (raíz). Cada cambio que se sube queda en línea en uno o dos minutos.
 
-## 3. Publicar en GitHub Pages
-1. Crea un repositorio, por ejemplo `rit-digital`.
-2. **Add file → Upload files** y sube todos los archivos de esta carpeta (puedes dejar fuera `supabase.sql` y este LEEME).
-3. **Settings → Pages → Branch: main / (root) → Save**.
-4. En uno o dos minutos queda en `https://TU-USUARIO.github.io/rit-digital/`.
-
-## 4. En el celular
+## En el celular
 - Abre el link en Chrome → menú ⋮ → **Agregar a pantalla de inicio**. Queda como app.
 - La primera vez pide la **clave del equipo** (para guardar y ver los RIT en la nube).
 - Prevención y Jeremy entran a **Editar catálogo** con su clave personal. Lo que guarden lo ven todos al abrir la app o al volver a ella.
