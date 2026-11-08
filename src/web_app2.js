@@ -505,7 +505,7 @@ function equipoList(){
   if (!list.length) return `<div class="emptybox">${ic("team", "l")}<p>${q.length ? "Sin resultados para esa búsqueda." : "Todavía no hay RIT de otros supervisores en estos días."}</p></div>` + moreBtn();
   return byDay(list, "team") + moreBtn();
 }
-const moreBtn = () => `<button class="more" data-act="eqmore">Ver días anteriores${ic("down", "s")}</button>`;
+const moreBtn = () => `<button class="morebtn" data-act="eqmore">Ver días anteriores${ic("down", "s")}</button>`;
 function equipoHtml(){
   if (!CLOUD) return `<div class="emptybox">${ic("cloudoff", "l")}<p>La app aún no está conectada a la nube.</p></div>`;
   if (!mem().team) return `<div class="emptybox">${ic("lock", "l")}<p>Para ver los RIT del equipo ingresa la clave del equipo.</p><button class="ghost" data-act="login">Ingresar clave</button></div>`;

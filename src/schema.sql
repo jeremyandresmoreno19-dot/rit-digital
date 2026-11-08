@@ -320,7 +320,7 @@ grant execute on function public.rit_borrador_borrar(text,text) to anon, authent
 -- Mínimo 6 caracteres. Después se pueden cambiar desde el panel de la app.
 insert into public.rit_claves (nombre, rol, clave_hash)
 select * from (values
-  ('Jeremy',       'editor', crypt('CAMBIA-clave-jeremy',     gen_salt('bf'))),
+  ('Administrador','editor', crypt('CAMBIA-clave-jeremy',     gen_salt('bf'))),
   ('Prevención',   'editor', crypt('CAMBIA-clave-prevencion', gen_salt('bf'))),
   ('Equipo MISPA', 'equipo', crypt('CAMBIA-clave-equipo',     gen_salt('bf')))
 ) as v(nombre, rol, clave_hash)

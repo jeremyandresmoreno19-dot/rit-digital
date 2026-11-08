@@ -354,7 +354,7 @@ canvas.tappable{cursor:pointer}
 .day{display:flex; justify-content:space-between; align-items:baseline; font-size:16px; margin:16px 4px 4px; color:var(--faena)}
 .search{display:flex; gap:8px; align-items:center; border:1.5px solid var(--line); background:var(--sunk); border-radius:10px; padding:0 12px; color:#7D8899; margin:2px 0 4px}
 .search input{border:0 !important; background:transparent !important; min-height:46px; padding:0; box-shadow:none !important; flex:1}
-.more{display:flex; gap:6px; align-items:center; border:0; background:transparent; color:var(--navy); font-weight:600; font-size:14px; padding:6px 4px 12px; min-height:40px}
+.morebtn{display:flex; gap:6px; align-items:center; border:0; background:transparent; color:var(--navy); font-weight:600; font-size:14px; padding:6px 4px 12px; min-height:40px}
 .emptybox{text-align:center; color:var(--muted); padding:30px 16px; border:1.5px dashed var(--line); border-radius:14px; margin:12px 0}
 .emptybox .ic{color:#A9B3C2}
 .emptybox p{margin:8px 0 12px}
@@ -1292,7 +1292,7 @@ function equipoList(){
   if (!list.length) return `<div class="emptybox">${ic("team", "l")}<p>${q.length ? "Sin resultados para esa búsqueda." : "Todavía no hay RIT de otros supervisores en estos días."}</p></div>` + moreBtn();
   return byDay(list, "team") + moreBtn();
 }
-const moreBtn = () => `<button class="more" data-act="eqmore">Ver días anteriores${ic("down", "s")}</button>`;
+const moreBtn = () => `<button class="morebtn" data-act="eqmore">Ver días anteriores${ic("down", "s")}</button>`;
 function equipoHtml(){
   if (!CLOUD) return `<div class="emptybox">${ic("cloudoff", "l")}<p>La app aún no está conectada a la nube.</p></div>`;
   if (!mem().team) return `<div class="emptybox">${ic("lock", "l")}<p>Para ver los RIT del equipo ingresa la clave del equipo.</p><button class="ghost" data-act="login">Ingresar clave</button></div>`;

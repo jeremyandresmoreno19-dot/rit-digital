@@ -3,7 +3,7 @@
 -- No uses comillas simples ( ' ) dentro de la clave.
 insert into public.rit_claves (nombre, rol, clave_hash)
 select * from (values
-  ('Jeremy',       'editor', crypt('CAMBIA-clave-jeremy',     gen_salt('bf'))),
+  ('Administrador','editor', crypt('CAMBIA-clave-jeremy',     gen_salt('bf'))),
   ('Prevención',   'editor', crypt('CAMBIA-clave-prevencion', gen_salt('bf'))),
   ('Equipo MISPA', 'equipo', crypt('CAMBIA-clave-equipo',     gen_salt('bf')))
 ) as v(nombre, rol, clave_hash)
