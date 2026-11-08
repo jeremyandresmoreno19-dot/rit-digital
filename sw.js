@@ -1,5 +1,5 @@
 // Guarda la app en el celular para que abra sin señal. El catálogo y los RIT van siempre directo a Supabase.
-const CACHE = "rit-v4";
+const CACHE = "rit-v5";
 const APP = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 const CDN = [
   "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js",
