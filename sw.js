@@ -1,10 +1,11 @@
 // Guarda la app en el celular para que abra sin señal. El catálogo y los RIT van siempre directo a Supabase.
-const CACHE = "rit-v5";
+const CACHE = "rit-v6";
 const APP = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 const CDN = [
   "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js",
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
-  "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+  "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",
+  "https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"
 ];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all([c.addAll(APP), ...CDN.map(u => c.add(u).catch(() => {}))])).then(() => self.skipWaiting()));

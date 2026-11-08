@@ -1,0 +1,209 @@
+
+:root{
+  --bg:#FFFFFF; --surface:#FFFFFF; --sunk:#F5F7FA; --ink:#101828; --muted:#596273; --line:#D5DAE2;
+  --navy:#1F3864; --on-navy:#FFFFFF; --navy-soft:#E7ECF6; --orange:#E45302; --on-orange:#FFFFFF;
+  --danger:#B42318; --danger-soft:#FDECEA; --focus:#2F6FEB;
+  color-scheme: light;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+/* Siempre en fondo blanco, aunque el teléfono o la app estén en modo oscuro */
+html, html[data-theme], :root[data-theme="dark"]{
+  --bg:#FFFFFF; --surface:#FFFFFF; --sunk:#F5F7FA; --ink:#101828; --muted:#596273; --line:#D5DAE2;
+  --navy:#1F3864; --on-navy:#FFFFFF; --navy-soft:#E7ECF6; --orange:#E45302; --on-orange:#FFFFFF;
+  --danger:#B42318; --danger-soft:#FDECEA; --focus:#2F6FEB; color-scheme: light;
+}
+html, body{background:#FFFFFF !important}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px); -webkit-text-size-adjust:100%}
+html,body{margin:0}
+body{background:var(--bg); color:var(--ink); font:400 16px/1.45 "Barlow", Arial, Helvetica, sans-serif; -webkit-font-smoothing:antialiased}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--surface)}
+h1,h2,h3{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif; font-weight:700; margin:0; letter-spacing:.005em}
+button,input,textarea{font:inherit; color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
+img{max-width:100%}
+
+/* Barra superior */
+.top{position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--surface); border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:12px; padding:10px 16px}
+.top img{height:24px; width:auto; flex:none}
+.top .ttl{min-width:0; flex:1; border-left:1px solid var(--line); padding-left:12px}
+.top h1{font-size:17px; line-height:1.12}
+.top p{margin:0; font-size:13px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.saved{font-size:12px; color:var(--muted); white-space:nowrap}
+.saved:empty{display:none}
+:root[data-dark-logo] .top img{filter:none}
+
+main{max-width:760px; margin:0 auto; padding:14px 12px 120px}
+section{margin:0 0 14px}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px}
+.sechead{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 4px 10px}
+.sechead h2, .card > h2{font-size:21px}
+.card > h2{margin-bottom:12px}
+.count{font:600 15px "Barlow",sans-serif; color:var(--muted); margin-left:6px}
+.hint{color:var(--muted); font-size:14px; margin:-6px 0 12px}
+
+/* Campos */
+.fld{display:block; margin:0 0 14px}
+.fld > span:first-child, .lbl{display:block; font:600 14px "Barlow",sans-serif; color:var(--muted); margin:0 0 6px}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+input[type=text],input[type=date],input[type=search],input:not([type]),textarea,.stepper input{
+  width:100%; min-height:48px; border:1.5px solid var(--line); background:var(--sunk); border-radius:10px; padding:10px 12px; font-size:16px}
+textarea{resize:vertical; min-height:64px}
+input:focus,textarea:focus{border-color:var(--navy); outline:none; box-shadow:0 0 0 3px color-mix(in srgb,var(--navy) 22%,transparent)}
+.seg{display:flex; background:var(--sunk); border:1.5px solid var(--line); border-radius:12px; padding:3px; gap:3px}
+.seg button{flex:1; min-height:44px; border:0; border-radius:9px; background:transparent; font-weight:600; color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--navy); color:var(--on-navy)}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px}
+.chip{min-height:42px; padding:8px 14px; border-radius:999px; border:1.5px solid var(--line); background:var(--surface); font-weight:600; font-size:15px}
+.chip[aria-pressed="true"]{background:var(--navy); color:var(--on-navy); border-color:var(--navy)}
+.stepper{display:grid; grid-template-columns:52px 1fr 52px; gap:8px; max-width:240px}
+.stepper button{min-height:48px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); font-size:24px; font-weight:600; line-height:1}
+.stepper input{text-align:center; font-weight:700; font-size:18px}
+details.more{border-top:1px solid var(--line); margin:4px -16px -16px; padding:0 16px}
+details.more summary{list-style:none; cursor:pointer; padding:14px 0; display:flex; justify-content:space-between; gap:10px; align-items:center}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary b{font-weight:600; white-space:nowrap}
+details.more summary small{color:var(--muted); font-size:13px; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+details.more[open] summary{padding-bottom:12px}
+details.more .inner{padding-bottom:4px}
+
+/* Autocompletar */
+.auto{position:relative}
+.sug{position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:4; background:var(--surface); border:1.5px solid var(--line); border-radius:10px; overflow:hidden; box-shadow:0 10px 24px rgba(16,24,40,.14)}
+.sug button{display:block; width:100%; text-align:left; border:0; background:transparent; padding:12px 14px; min-height:46px; border-top:1px solid var(--line)}
+.sug button:first-child{border-top:0}
+.sug button:active,.sug button:hover{background:var(--navy-soft)}
+
+/* Actividades */
+.act{background:var(--surface); border:1px solid var(--line); border-radius:14px; margin:0 0 12px; overflow:hidden}
+.act > header{display:flex; gap:12px; align-items:flex-start; padding:14px 14px 10px}
+.num{flex:none; width:30px; height:30px; border-radius:8px; background:var(--navy); color:var(--on-navy); display:grid; place-items:center; font:700 16px "Barlow Semi Condensed",sans-serif}
+.act .t{min-width:0}
+.act .t b{display:block; font:700 19px/1.2 "Barlow Semi Condensed",sans-serif}
+.act .t small{color:var(--muted); font-size:13px}
+.tags{display:flex; flex-wrap:wrap; gap:8px; padding:0 14px 12px}
+/* Etiqueta RF: el elemento memorable, como tarjeta de bloqueo */
+.tag{display:inline-flex; align-items:stretch; border:2px solid var(--navy); border-radius:7px; background:var(--surface); padding:0; overflow:hidden; min-height:40px}
+.tag b{display:grid; place-items:center; padding:0 9px; background:var(--navy); color:var(--on-navy); font:700 16px "Barlow Semi Condensed",sans-serif; letter-spacing:.02em; position:relative}
+.tag b::before{content:""; position:absolute; left:4px; top:50%; width:5px; height:5px; margin-top:-2.5px; border-radius:50%; background:var(--surface)}
+.tag b{padding-left:14px}
+.tag span{display:grid; place-items:center; padding:0 10px; font-weight:600; font-size:14px; text-align:left}
+.tag.edit{border-style:dashed; border-color:var(--muted); color:var(--muted); padding:0 12px; align-items:center; font-weight:600; font-size:14px}
+.tag.need{border-color:var(--danger); color:var(--danger); border-style:solid; padding:0 12px; align-items:center; font-weight:700; background:var(--danger-soft)}
+.prep{padding:10px 14px 12px; border-top:1px dashed var(--line)}
+.prep .row{display:grid; grid-template-columns:repeat(2,1fr); gap:8px}
+@media (min-width:560px){.prep .row{grid-template-columns:repeat(4,1fr)}}
+.pp{min-height:44px; border-radius:10px; border:1.5px solid var(--line); background:var(--sunk); font-weight:600; font-size:14px; display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 10px; text-align:left}
+.pp i{font-style:normal; font:700 13px "Barlow Semi Condensed",sans-serif; padding:3px 8px; border-radius:6px; background:var(--navy); color:var(--on-navy)}
+.pp.no{border-color:var(--danger); background:var(--danger-soft); color:var(--danger)}
+.pp.no i{background:var(--danger); color:var(--surface)}
+.warn{margin:8px 0 0; color:var(--danger); font-weight:600; font-size:14px}
+.act details{border-top:1px solid var(--line)}
+.act details summary{cursor:pointer; padding:12px 14px; color:var(--navy); font-weight:600; font-size:15px}
+.rfd{padding:0 14px 8px}
+.rfd div{padding:10px 0; border-top:1px solid var(--line); font-size:14px}
+.rfd div:first-child{border-top:0}
+.rfd h4{margin:0 0 4px; font:700 15px "Barlow Semi Condensed",sans-serif}
+.rfd p{margin:2px 0}
+.rfd em{font-style:normal; color:var(--muted)}
+.act footer{display:flex; border-top:1px solid var(--line)}
+.act footer button{flex:1; min-height:48px; border:0; background:transparent; font-weight:600; color:var(--navy)}
+.act footer button + button{border-left:1px solid var(--line); color:var(--danger)}
+.add{width:100%; min-height:64px; border:2px dashed var(--line); background:transparent; border-radius:14px; font:700 18px "Barlow Semi Condensed",sans-serif; color:var(--navy)}
+.ghost{min-height:40px; border:1.5px solid var(--navy); color:var(--navy); background:transparent; border-radius:10px; padding:6px 12px; font-weight:600; font-size:14px}
+.ghost:disabled{opacity:.45; cursor:not-allowed}
+
+/* Grilla RF del turno */
+.rfgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px}
+@media (max-width:380px){.rfgrid{grid-template-columns:1fr 1fr}}
+.rfb{display:flex; gap:10px; align-items:center; text-align:left; min-height:52px; border:1.5px solid var(--line); background:var(--surface); border-radius:10px; padding:6px 10px; font-size:13px; line-height:1.2}
+.rfb .tx{display:flex; flex-direction:column; min-width:0}
+.rfb b{font:700 16px "Barlow Semi Condensed",sans-serif}
+.rfb .tx span{color:var(--muted)}
+.rfb[aria-pressed="true"] .tx span{color:var(--ink)}
+.rfb .bx{flex:none; width:20px; height:20px; border:2px solid var(--muted); border-radius:4px; display:grid; place-items:center}
+.rfb[aria-pressed="true"]{border-color:var(--navy); background:var(--navy-soft)}
+.rfb[aria-pressed="true"] .bx{background:var(--navy); border-color:var(--navy)}
+.rfb[aria-pressed="true"] .bx::after{content:""; width:6px; height:11px; border:solid var(--on-navy); border-width:0 2.5px 2.5px 0; transform:translateY(-1px) rotate(45deg)}
+.rfb.auto .bx{border-radius:50%}
+
+/* Interruptor */
+.switch{display:flex; align-items:center; justify-content:space-between; gap:14px; font-weight:600; font-size:17px; cursor:pointer}
+.switch input{appearance:none; -webkit-appearance:none; flex:none; width:54px; height:32px; border-radius:999px; background:var(--line); position:relative; transition:background .15s; cursor:pointer}
+.switch input::after{content:""; position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:#fff; transition:transform .15s; box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.switch input:checked{background:var(--navy)}
+.switch input:checked::after{transform:translateX(22px)}
+.switch small{display:block; font-weight:400; color:var(--muted); font-size:14px}
+.lastday h3{font-size:18px; margin:20px 0 10px}
+.ap{border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:var(--sunk)}
+.ap .row2 .fld{margin-bottom:0}
+.ap textarea, .ap input{background:var(--surface)}
+.ap > .fld{margin-bottom:10px}
+
+/* Historial */
+.hist{list-style:none; margin:0; padding:0}
+.hist li{display:flex; gap:10px; align-items:center; padding:12px 0; border-top:1px solid var(--line)}
+.hist li:first-child{border-top:0}
+.hist .info{flex:1; min-width:0}
+.hist .info b{display:block; font:700 17px "Barlow Semi Condensed",sans-serif}
+.hist .info small{color:var(--muted); font-size:14px}
+.hist .cur{font-size:12px; font-weight:700; color:var(--orange); margin-left:6px}
+.empty{color:var(--muted); margin:0}
+
+/* Barra inferior */
+.bar{position:fixed; left:0; right:0; bottom:0; z-index:6; background:var(--surface); border-top:1px solid var(--line);
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)); display:flex; gap:10px; justify-content:center}
+.bar > *{max-width:370px}
+.btn{flex:1; min-height:52px; border-radius:12px; border:1.5px solid var(--navy); background:var(--surface); color:var(--navy); font:700 18px "Barlow Semi Condensed",sans-serif}
+.btn.primary{background:var(--orange); border-color:var(--orange); color:var(--on-orange)}
+.btn:disabled{opacity:.5}
+
+/* Hojas (bottom sheets) */
+#sheet{position:fixed; inset:0; z-index:20}
+#sheet[hidden]{display:none}
+.scrim{position:absolute; inset:0; background:rgba(8,12,22,.5)}
+.panel{position:absolute; left:0; right:0; bottom:0; max-height:92%; max-width:760px; margin:0 auto; background:var(--surface); border-radius:18px 18px 0 0;
+  display:flex; flex-direction:column; padding-bottom:env(safe-area-inset-bottom,0px); animation:up .18s ease-out}
+.panel.full{top:env(safe-area-inset-top,0px); max-height:none; border-radius:0; max-width:none}
+@keyframes up{from{transform:translateY(24px); opacity:.6}to{transform:none; opacity:1}}
+@media (prefers-reduced-motion:reduce){.panel{animation:none}.switch input,.switch input::after{transition:none}}
+.sh-head{display:flex; align-items:center; gap:10px; padding:14px 16px 10px}
+.sh-head h2{flex:1; font-size:21px}
+.icon{width:44px; height:44px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); font-size:20px; line-height:1}
+.sh-body{overflow:auto; padding:0 16px 16px; -webkit-overflow-scrolling:touch}
+.sh-foot{padding:10px 16px 12px; border-top:1px solid var(--line); display:flex; gap:10px}
+.areas{display:flex; gap:8px; overflow-x:auto; padding:2px 16px 12px; scrollbar-width:none}
+.areas::-webkit-scrollbar{display:none}
+.areas .chip{flex:none; min-height:38px; padding:6px 12px; font-size:14px}
+.res{display:flex; flex-direction:column; align-items:flex-start; gap:2px; width:100%; text-align:left; border:0; border-top:1px solid var(--line); background:transparent; padding:12px 2px; min-height:56px}
+.res .nm{font-weight:600; font-size:16px}
+.res .meta{font-size:13px; color:var(--muted)}
+.res .meta b{color:var(--navy); font-weight:700; margin-right:6px}
+.res.new{border:2px dashed var(--orange); border-radius:12px; padding:12px; margin:8px 0; color:var(--orange)}
+.res.new .nm{color:var(--ink)}
+.grp{font:700 14px "Barlow Semi Condensed",sans-serif; color:var(--muted); margin:14px 2px 4px}
+.rfpick{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px}
+.rfpick button{position:relative; display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; min-height:64px; border:1.5px solid var(--line); background:var(--surface); border-radius:10px; padding:8px 10px}
+.rfpick button b{font:700 17px "Barlow Semi Condensed",sans-serif}
+.rfpick button span{font-size:13px; color:var(--muted); line-height:1.25}
+.rfpick button[aria-pressed="true"]{border-color:var(--navy); background:var(--navy-soft); box-shadow:inset 0 0 0 1px var(--navy)}
+.rfpick button em{position:absolute; top:8px; right:8px; font-style:normal; width:22px; height:22px; border-radius:50%; background:var(--navy); color:var(--on-navy); font:700 13px "Barlow",sans-serif; display:grid; place-items:center}
+.pages{background:var(--sunk); flex:1; overflow:auto; padding:12px}
+.pages canvas{display:block; margin:0 auto 12px; background:#fff; box-shadow:0 2px 10px rgba(16,24,40,.18)}
+.pages .msg{color:var(--muted); text-align:center; padding:40px 12px}
+.zoom{display:flex; align-items:center; gap:6px}
+.zoom span{min-width:48px; text-align:center; font-weight:600; font-size:14px}
+.prevopts{padding:0 16px 10px}
+.prevopts .switch{font-size:15px}
+.prevopts .switch input{width:46px; height:28px}
+.prevopts .switch input::after{width:22px; height:22px}
+.prevopts .switch input:checked::after{transform:translateX(18px)}
+.confirm p{margin:0 0 6px}
+
+#toast{position:fixed; left:50%; bottom:calc(86px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%) translateY(10px); z-index:30;
+  background:var(--ink); color:var(--surface); padding:12px 16px; border-radius:12px; font-weight:600; font-size:15px; max-width:calc(100% - 32px);
+  opacity:0; pointer-events:none; transition:opacity .2s, transform .2s}
+#toast.on{opacity:1; transform:translateX(-50%)}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}

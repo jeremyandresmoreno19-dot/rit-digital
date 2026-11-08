@@ -41,3 +41,10 @@ Eres Claude y controlas el navegador del computador de Jeremy. Vas a dejar en l�
 3. Si la página da 404 o sigue diciendo "Catálogo local", espera otro minuto, recarga y revisa `config.js`.
 4. Pídele a Jeremy que pruebe su clave del equipo en la app.
 5. Cuando todo funcione, dile: "Listo. En el celular abre el link en Chrome → ⋮ → Agregar a pantalla de inicio".
+
+## Actualización: menú y borradores (una sola vez)
+Si la app ya está funcionando y solo falta la actualización del menú:
+1. Abre `https://raw.githubusercontent.com/jeremyandresmoreno19-dot/rit-digital/main/sql/3-menu-y-borradores.sql` y copia **todo** el texto.
+2. En el mismo proyecto de Supabase, abre **SQL Editor → New query**, pega y toca **Run**. No hay que cambiar nada, no pide claves y no borra datos.
+3. Debe terminar con *Success*. Si sale un error, detente y muéstraselo a Jeremy.
+4. Abre la app, recarga con Ctrl+Shift+R y entra a la pestaña **Equipo**: ya no debe decir "Falta ejecutar la actualización de la base de datos".

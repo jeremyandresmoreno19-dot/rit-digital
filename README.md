@@ -5,9 +5,17 @@ Reunión de Inicio de Turno (RIT) y Orden de Trabajo (OT) de MISPA en el celular
 ## Abrir la app
 👉 **https://jeremyandresmoreno19-dot.github.io/rit-digital/**
 
+## Menú
+- **Inicio:** nuevo RIT de hoy, seguir el borrador, repetir el anterior y la OT.
+- **Mis RIT:** tu carpeta por día (semana de turno miércoles a martes, mes o todo). Ver, abrir y editar, copiar a hoy.
+- **Equipo:** los RIT de los demás supervisores por día, terminados y en curso. Solo se ven; se pueden descargar o usar como base.
+- **Admin** (arriba a la derecha): pide la clave de editor. Catálogo, quién hizo su RIT hoy y el archivo semanal en ZIP.
+- El RIT se llena por pasos: Turno, Actividades, Preparados, OT y Cierre. Cada cambio se guarda solo.
+
 ## Cómo está armado
 - `index.html`: la app; `config.js`: conexión a Supabase (proyecto `ujbkdhjhetechdurqsgf`, clave pública anon); `sw.js` y `manifest.webmanifest`: para que abra sin señal y se instale.
-- `sql/1-tablas.sql`: tablas, seguridad y catálogo inicial. `sql/2-claves.sql`: las tres claves (se cambian antes de ejecutar; nunca se suben con claves reales).
+- `sql/1-tablas.sql`: tablas, seguridad y catálogo inicial. `sql/2-claves.sql`: las tres claves (se cambian antes de ejecutar; nunca se suben con claves reales). `sql/3-menu-y-borradores.sql`: actualización para el menú (se ejecuta una vez en una base ya instalada).
+- `src/`: código fuente. Después de editarlo: `python3 src/build.py && node src/gen_sql.js`.
 - GitHub Pages publica la rama `main` (raíz). Cada cambio que se sube queda en línea en uno o dos minutos.
 
 ## En el celular
