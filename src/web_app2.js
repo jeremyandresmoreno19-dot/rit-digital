@@ -6,7 +6,7 @@ const SB_URL = String(RC.SUPABASE_URL || "").replace(/\/+$/, "");
 const SB_KEY = String(RC.SUPABASE_ANON_KEY || "");
 const CLOUD = !!(SB_URL && SB_KEY && !/TU-PROYECTO|TU-ANON/.test(SB_URL + SB_KEY));
 const LS_KEY = "rit_rt_v3", CAT_KEY = "rit_cat_v2";
-const PREP_V = [["SI","SÍ"],["NO","NO"],["NA","NA"]];
+const PREP_V = [["SI","SÍ"],["NO","NO"]];   // el formato naranjo solo tiene SÍ y NO
 const fmtDate = iso => { if (!iso) return ""; const [y, m, d] = String(iso).split("-"); return d + "-" + m + "-" + y; };
 const ITEMS = ["Instructivos y/o PTS","Materiales","Herramientas","EPP"];
 
@@ -49,7 +49,7 @@ let KC = (() => { try { const o = JSON.parse(localStorage.getItem(CAT_KEY)); if 
 let RFL = {}, RFO = [], ACT = {}, AREA_LIST = [];
 function indexCatalog(){
   RFL = {}; KC.rf.forEach(r => { RFL[r.code] = { n:r.nombre, r:r.riesgo, t:r.cons_tipo || "", c:r.consecuencia, k:r.controles, by:r.updated_by, at:r.updated_at }; });
-  RFO = KC.rf.slice().sort((a, b) => a.orden - b.orden).map(r => r.code).filter(c => RIT2.CODES.includes(c));
+  RFO = KC.rf.slice().sort((a, b) => a.orden - b.orden).map(r => r.code).filter(c => RIT3.CODES.includes(c));
   ACT = {}; KC.acts.forEach(a => { ACT[a.code] = a; });
   AREA_LIST = []; KC.acts.slice().sort((a, b) => a.orden - b.orden).forEach(a => { if (!AREA_LIST.includes(a.area)) AREA_LIST.push(a.area); });
 }
@@ -264,21 +264,55 @@ function turnoHtml(d){
 
   return html;
 }
+// ================= OT separadas por área =================
+// Cada área del itemizado la firma una persona distinta de Codelco, así que va en su propia OT.
+// El administrador puede juntar áreas en una misma OT (KC.cfg.otGrupos) y el supervisor puede mover actividades.
+const OT_OTRAS = "Otras actividades";
+function actArea(a){ const it = itemById(a.id); return it && !it.custom ? it.area : ""; }
+function autoGroup(a){ const ar = actArea(a); if (!ar) return OT_OTRAS; const g = (KC.cfg && KC.cfg.otGrupos) || {}; return String(g[ar] || "").trim() || ar; }
+function otGroups(d){
+  const map = new Map();
+  d.acts.forEach((a, i) => { const key = a.ot || autoGroup(a); if (!map.has(key)) map.set(key, { key, acts:[] }); map.get(key).acts.push({ a, i }); });
+  const list = [...map.values()], info = d.otInfo || {};
+  list.forEach((g, n) => {
+    const inf = info[g.key] || {};
+    g.n = n + 1; g.manual = /^Nueva OT \d+$/.test(g.key);
+    g.areaEsp = inf.areaEsp !== undefined ? inf.areaEsp : list.length === 1 && d.ot && d.ot.areaEsp ? d.ot.areaEsp : g.key === OT_OTRAS || g.manual ? "" : g.key;
+    g.tipo = inf.tipo !== undefined ? inf.tipo : (d.ot || {}).tipo || "";
+  });
+  return list;
+}
+function otInfoOf(d, key){ d.otInfo = d.otInfo || {}; return d.otInfo[key] || (d.otInfo[key] = {}); }
 function otHtml(d){
-  const h = d.h, cfg = KC.cfg || {};
-  let html = "";
-  const ot = d.ot || {}; const actAreas = [...new Set(d.acts.map(a => (itemById(a.id) || {}).area).filter(x => x && x !== "Mis actividades"))];
-  const sugArea = actAreas.join(", ");
-  html += `<section class="card"><h2>Orden de Trabajo (OT)</h2>
-    <p class="hint">Sale con los mismos datos del RIT: fecha, área seca o húmeda, jornada, turno, actividades y supervisor.</p>
-    <label class="fld"><span>Área específica</span><span class="auto" style="display:block"><input type="text" data-bind="ot.areaEsp" data-auto="areaEsp" value="${esc(ot.areaEsp)}" placeholder="Por ejemplo: Chancado Secundario" autocomplete="off"></span></label>
-    ${sugArea && sugArea !== ot.areaEsp ? `<div class="chips" style="margin-top:-6px"><button class="chip" data-act="set" data-path="ot.areaEsp" data-val="${esc(sugArea)}">Usar: ${esc(sugArea)}</button></div>` : ""}
-    <div class="fld"><span>Tipo de trabajo</span><div class="seg" role="group" aria-label="Tipo de trabajo">
-      ${["Planificada","No planificada","Emergente"].map(t => `<button data-act="settog" data-path="ot.tipo" data-val="${t}" aria-pressed="${ot.tipo === t}">${t}</button>`).join("")}</div></div>
-    <p class="note" style="margin:0">Inicio, término, equipos, trabajadores, documentos y firmas de Codelco se completan a mano en la hoja.</p>
-  </section>`;
-
+  const groups = otGroups(d);
+  let html = `<section class="card otintro"><h2>Órdenes de Trabajo</h2>
+    <p class="hint" style="margin:0">Se arma una OT por área, porque cada área la firma una persona distinta. Toca una actividad para cambiarla de OT.</p></section>`;
+  if (!groups.length) return html + `<div class="emptybox">${ic("ot", "l")}<p>Primero agrega las actividades del turno.</p><button class="ghost" data-act="step" data-s="1">Ir a Actividades</button></div>`;
+  groups.forEach(g => {
+    const hojas = Math.max(1, Math.ceil(g.acts.length / OT_GEOM.PER_SHEET));
+    html += `<section class="card otcard">
+      <div class="othead"><span class="otn">OT ${g.n}</span><div><b>${esc(g.key)}</b><small>${g.acts.length} ${g.acts.length === 1 ? "actividad" : "actividades"}${hojas > 1 ? ", " + hojas + " hojas" : ""}${groups.length > 1 ? `, de ${groups.length} OT` : ""}</small></div>
+        <button class="ghost sm" data-act="otview" data-n="${g.n}">${ic("eye", "s")}Ver</button></div>
+      <label class="fld"><span>Área específica</span><span class="auto" style="display:block"><input type="text" data-otarea="${esc(g.key)}" data-auto="areaEsp" value="${esc(g.areaEsp)}" placeholder="Por ejemplo: Chancado Secundario" autocomplete="off"></span></label>
+      <div class="fld"><span>Tipo de trabajo</span><div class="seg" role="group" aria-label="Tipo de trabajo">
+        ${["Planificada","No planificada","Emergente"].map(t => `<button data-act="ottipo" data-k="${esc(g.key)}" data-val="${t}" aria-pressed="${g.tipo === t}">${t}</button>`).join("")}</div></div>
+      <ol class="otacts">${g.acts.map(({ a, i }) => `<li><button data-act="otmove" data-i="${i}"><span class="num">${i + 1}</span><span class="in"><b>${esc(a.name)}</b><small>${esc(actArea(a) || "Actividad propia")}${a.ot ? ", movida a mano" : ""}</small></span><span class="mv">${ic("repeat", "s")}Mover</span></button></li>`).join("")}</ol>
+    </section>`;
+  });
+  html += `<p class="note" style="margin:0 4px">Inicio, término, equipos, trabajadores, documentos y firmas de Codelco se completan a mano en cada hoja.</p>`;
   return html;
+}
+function otMoveSheet(i){
+  const d = D(), a = d.acts[i]; if (!a) return;
+  otMoveSheet.from = !sheet.hidden && panel.dataset.kind === "ot" ? "ot" : "";
+  const groups = otGroups(d), cur = a.ot || autoGroup(a), auto = autoGroup(a);
+  let n = 1; while (groups.some(g => g.key === "Nueva OT " + n)) n++;
+  openSheet(`<div class="sh-head"><h2>Mover a otra OT</h2><button class="icon" data-act="close" aria-label="Cerrar">${ic("close")}</button></div>
+    <div class="sh-body"><p class="fixed-name" style="margin-bottom:12px">${esc(a.name)}</p><div class="list">
+      ${groups.map(g => `<button class="li" data-act="otto" data-i="${i}" data-k="${esc(g.key)}" ${g.key === cur ? "disabled" : ""}><span class="ico otn sm">${g.n}</span><span class="in"><b>OT ${g.n}: ${esc(g.key)}</b><small>${g.key === cur ? "Está aquí" : g.acts.length + (g.acts.length === 1 ? " actividad" : " actividades")}</small></span>${ic("chev", "chev")}</button>`).join("")}
+      <button class="li" data-act="otto" data-i="${i}" data-k="Nueva OT ${n}"><span class="ico">${ic("plus")}</span><span class="in"><b>OT nueva</b><small>Una hoja aparte solo para esta actividad</small></span>${ic("chev", "chev")}</button>
+      ${a.ot && a.ot !== auto ? `<button class="li" data-act="otto" data-i="${i}" data-k=""><span class="ico">${ic("back")}</span><span class="in"><b>Volver a su área</b><small>${esc(auto)}</small></span>${ic("chev", "chev")}</button>` : ""}
+    </div></div>`);
 }
 function lastDayHtml(d){
   const h = d.h, cfg = KC.cfg || {};
@@ -533,7 +567,7 @@ function formHtml(){
   return h;
 }
 function actsStepHtml(d){
-  const prev = prevRec(), hojas = d.acts.length ? ritPaginate(d.acts).length : 1;
+  const prev = prevRec(), hojas = d.acts.length ? ritPaginate3(d.acts).length : 1;
   let h = `<section><div class="sechead"><h2>Actividades<span class="count">${d.acts.length}${d.acts.length ? (hojas > 1 ? ", " + hojas + " hojas" : ", 1 hoja") : ""}</span></h2>
     ${prev && !d.acts.length ? `<button class="ghost" data-act="repeat">Repetir RIT del ${short(prev.fecha)}</button>` : ""}</div>`;
   d.acts.forEach((a, i) => { h += actCard(a, i, "acts"); });
@@ -724,7 +758,7 @@ function drawTxt(){
 // ================= PDF =================
 const b64 = x => { const b = atob(x); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
 let ASSETS = null;
-function assets(){ if (!ASSETS) ASSETS = { logoPng: b64(LOGO_PDF_B64), reversoPdf: b64(REVERSO_B64) }; return ASSETS; }
+let RIT_TPL = null;   // plantilla oficial: anverso y reverso (guía de consulta)
 // Texto de un RF en un documento: el propio se arma en vivo; uno ajeno usa lo que subió su autor
 function txtIn(d, i, a, x){
   if (d === S.draft) return txt(a, x);
@@ -736,25 +770,38 @@ async function makePdf(reverso, dd){
   if (!window.PDFLib) throw new Error("nolib");
   const d = dd || D(), c = KC.cfg || {};
   const h = { centro:"División Radomiro Tomic", gerencia:c.gerencia, superint:c.superint, area:d.h.area, fecha:fmtDate(d.h.fecha), turno:d.h.turno,
-              supervisor:d.h.supervisor, asistentes:d.h.asistentes, eecc:c.eecc, contrato:c.contrato, nombreContrato:c.nombreContrato };
+              supervisor:d.h.supervisor, asistentes:d.h.asistentes || "", eecc:c.eecc, contrato:c.contrato, nombreContrato:c.nombreContrato };
   const acts = d.acts.map((a, i) => ({ name:a.name, prep:a.prep, rows:(a.rf || []).filter(x => RFL[x]).slice(0, 3).map(x => { const T = txtIn(d, i, a, x); return { rf:x, r:T.r, c:ritConsText(T.t, T.c), k:T.k }; }) }));
-  const out = await buildRit2(window.PDFLib, assets(), { h, acts, lastDay:d.lastDay, aportes:d.aportes.map(a => ({ p:a.p, r:a.r, f:fmtDate(a.f) })), recon:d.recon }, { reverso });
+  if (!RIT_TPL) RIT_TPL = b64(RIT_TPL_B64);
+  const out = await buildRit3(window.PDFLib, RIT_TPL.slice(), { h, acts, lastDay:d.lastDay, aportes:d.aportes.map(a => ({ p:a.p, r:a.r, f:fmtDate(a.f) })), recon:d.recon }, { reverso });
   return out.bytes;
 }
 let OT_TPL = null;
 async function makeOt(dd){
   if (!window.PDFLib) throw new Error("nolib");
   if (!OT_TPL) OT_TPL = b64(OT_B64);
-  const d = dd || D(), c = KC.cfg || {};
+  const d = dd || D(), c = KC.cfg || {}, { PDFDocument } = window.PDFLib;
   const f = d.h.fecha ? d.h.fecha.split("-").reverse().join("/") : "";
-  const out = await buildOt(window.PDFLib, OT_TPL.slice(), { fecha:f, area:d.h.area, areaEsp:(d.ot || {}).areaEsp, jornada:d.h.jornada, tipo:(d.ot || {}).tipo,
-    turno:d.h.turno, descs:d.acts.map(a => a.name), jefe:c.jefeOps || "", supervisor:d.h.supervisor });
-  return out.bytes;
+  // Una OT por grupo de área; todas van en un solo PDF, cada una en su(s) hoja(s)
+  const groups = d.acts.length ? otGroups(d) : [{ key:"", acts:[], areaEsp:(d.ot || {}).areaEsp, tipo:(d.ot || {}).tipo, n:1 }];
+  const all = await PDFDocument.create();
+  for (const g of groups) {
+    const out = await buildOt(window.PDFLib, OT_TPL.slice(), { fecha:f, area:d.h.area, areaEsp:g.areaEsp, jornada:d.h.jornada, tipo:g.tipo,
+      turno:d.h.turno, descs:g.acts.map(x => x.a.name), jefe:c.jefeOps || "", supervisor:d.h.supervisor, label: groups.length > 1 ? `OT ${g.n} de ${groups.length}` : "" });
+    const src = await PDFDocument.load(out.bytes);
+    (await all.copyPages(src, src.getPageIndices())).forEach(pg => all.addPage(pg));
+  }
+  return await all.save();
+}
+// Qué OT y qué actividad hay en cada hoja de la OT (para tocar el documento y para "Ver")
+function otPageMap(d){
+  const out = []; otGroups(d).forEach(g => { const n = Math.max(1, Math.ceil(g.acts.length / OT_GEOM.PER_SHEET)); for (let k = 0; k < n; k++) out.push({ g, k }); });
+  return out.length ? out : [{ g:{ acts:[] }, k:0 }];
 }
 function problems(){
   const d = D(), out = [];
   if (!d.acts.length) out.push("Agrega al menos una actividad.");
-  d.acts.forEach((a, i) => { if (!a.rf.length) out.push(`La actividad ${i + 1} no tiene RF.`); });
+  d.acts.forEach((a, i) => { if ((a.prep || []).slice(0, 4).some(v => v !== "SI" && v !== "NO")) out.push(`En la actividad ${i + 1} falta marcar SÍ o NO en ¿Estamos preparados?`); });
   if (!String(d.h.supervisor || "").trim()) out.push("Falta el supervisor a cargo.");
   return out;
 }
@@ -806,38 +853,37 @@ document.addEventListener("click", e => {
 });
 function editFrom(fn){ fromPreview = true; fn(); }
 function hitRit(pg, x, y){
-  const R2 = RIT2, d = D(), pages = d.acts.length ? ritPaginate(d.acts) : [[]];
+  const G = RIT3, d = D(), pages = ritPaginate3(d.acts);
   if (pg >= pages.length) { toast("El reverso es la guía de consulta: no se edita"); return; }
-  const last = pg === pages.length - 1, offset = pages.slice(0, pg).reduce((n, p) => n + p.length, 0);
-  if (y >= R2.HDR_TOP && y < R2.HDR_TOP + 3 * R2.HDR_RH) {
-    const row = Math.floor((y - R2.HDR_TOP) / R2.HDR_RH), col = R2.HDR_COLS.findIndex((c, i) => x >= c && x < R2.HDR_COLS[i + 1]);
-    if (row === 2 || (row === 0 && col <= 2)) { toast("Esos datos del contrato los cambia el administrador en el panel"); return; }
+  const last = pg === pages.length - 1, offset = pg * G.PER;
+  if (y >= G.HDR_ROWS[0] && y < G.HDR_ROWS[3]) {
+    const row = G.HDR_ROWS.findIndex((t, k) => y >= t && y < G.HDR_ROWS[k + 1]);
+    if (row === 2 || (row === 0 && x < 879.1)) { toast("Esos datos del contrato los cambia el administrador en el panel"); return; }
     editFrom(() => drawSecSheet("turno")); return;
   }
-  if (y >= R2.BAND_TOP && y < R2.AH_TOP) { toast("Los RF de arriba se marcan solos según las actividades"); return; }
-  const slots = last ? R2.PER_LAST : R2.PER_MID;
-  if (y >= R2.AH_BOT && y < R2.AH_BOT + slots * R2.BLK_H) {
-    const b = Math.floor((y - R2.AH_BOT) / R2.BLK_H), i = offset + b, a = d.acts[i], top = R2.AH_BOT + b * R2.BLK_H, C = R2.COL;
+  if (y >= 140 && y < 235) { toast("Los RF de arriba se marcan solos según las actividades"); return; }
+  if (y >= G.T0 && y < G.T0 + G.PER * G.BLK) {
+    const b = Math.floor((y - G.T0) / G.BLK), i = offset + b, a = d.acts[i], top = G.T0 + b * G.BLK, C = G.COL;
     if (!a) { editFrom(() => openPicker("new")); return; }
     const inC = k => x >= C[k][0] && x < C[k][1];
     if (inC("ri") || inC("co") || inC("ct")) {
-      const j = Math.floor((y - top) / (R2.BLK_H / 3)), code = (a.rf || []).filter(c => RFL[c])[j];
+      const j = Math.floor((y - top) / G.RF_H), code = (a.rf || []).filter(c => RFL[c])[j];
       if (code) { editFrom(() => openTxt(i, code)); return; }
     }
-    if (inC("si") || inC("no") || inC("na")) {
-      const k = Math.floor((y - top) / (R2.BLK_H / 4)); const v = inC("si") ? "SI" : inC("no") ? "NO" : "NA";
+    if (inC("si") || inC("no")) {
+      const k = Math.min(3, Math.floor((y - top) / G.IT_H)), v = inC("si") ? "SI" : "NO";
       a.prep[k] = v; persist(true); render(); drawPreview(); toast(`${ITEMS[k]}: ${v === "SI" ? "SÍ" : v}`); return;
     }
     if (inC("rf")) { editFrom(() => openRf(i)); return; }
     actSheetIdx = i; editFrom(drawActSheet); return;
   }
-  if (last && y >= R2.BOT_TITLE - 12 && y < R2.FOOT) { editFrom(() => drawSecSheet("last")); return; }
+  if (last && y >= 712 && y < 805) { editFrom(() => drawSecSheet("last")); return; }
 }
 function hitOt(pg, x, y){
-  const G = OT_GEOM, d = D();
+  const G = OT_GEOM, d = D(), pm = otPageMap(d)[pg] || { g:{ acts:[] }, k:0 };
   if (y >= G.rowsTop[0] && y < G.rowsTop[G.rowsTop.length - 1]) {
-    const r = G.rowsTop.findIndex((t, k) => y >= t && y < G.rowsTop[k + 1]), i = pg * G.PER_SHEET + r;
-    if (x < G.desc.x1) { if (d.acts[i]) { actSheetIdx = i; editFrom(drawActSheet); } else editFrom(() => openPicker("new")); return; }
+    const r = G.rowsTop.findIndex((t, k) => y >= t && y < G.rowsTop[k + 1]), it = pm.g.acts[pm.k * G.PER_SHEET + r];
+    if (x < G.desc.x1) { if (it) editFrom(() => otMoveSheet(it.i)); else editFrom(() => drawSecSheet("ot")); return; }
     toast("Equipos asociados y trabajadores se completan a mano en la hoja"); return;
   }
   if (y >= G.fecha.t && y < G.fecha.b && x >= G.areaEsp.x0 && x < G.areaEsp.x1) { editFrom(() => drawSecSheet("ot")); return; }
@@ -899,7 +945,7 @@ async function fitFonts(){
 }
 function fitMsg(field, text, tipo){
   if (!FIT_FONT) return { cls:"", t:"" };
-  const f = RIT2.FIT[field]; let t = String(text || "").replace(/\s+/g, " ").trim();
+  const f = RIT3.FIT[field]; let t = String(text || "").replace(/\s+/g, " ").trim();
   if (field === "co") t = ritConsText(tipo, t);
   if (!t) return { cls:"warn", t:"Vacío: la celda quedará en blanco" };
   const r = ritFit(t, f.bold ? FIT_FONT_B : FIT_FONT, f.w, f.h, f.s, f.m, f.lead);
@@ -908,7 +954,7 @@ function fitMsg(field, text, tipo){
   return { cls:"warn", t:`Cabe, pero con letra más chica (${String(r.s.toFixed(1)).replace(".", ",")} pt)` };
 }
 function updateFits(){ panel.querySelectorAll("[data-fit]").forEach(inp => { const out = panel.querySelector(`.fit[data-for="${inp.id}"]`); if (!out) return; const tp = inp.dataset.tipo ? ($("#" + inp.dataset.tipo) || {}).value : ""; const m = fitMsg(inp.dataset.fit, inp.value, tp); out.className = "fit " + m.cls; out.textContent = m.t; }); }
-const ED_TABS = [["rf","Riesgos (RF)","risk"],["act","Actividades","acts"],["sup","Supervisores","helmet"],["cfg","Contrato","contract"],["log","Cambios","hist"],["key","Claves","key"],["arch","Archivo completo","archive"]];
+const ED_TABS = [["rf","Riesgos (RF)","risk"],["act","Actividades","acts"],["sup","Supervisores","helmet"],["cfg","Contrato","contract"],["otg","OT por área","ot"],["log","Cambios","hist"],["key","Claves","key"],["arch","Archivo completo","archive"]];
 function edHead(){
   const t = ED_TABS.find(x => x[0] === edTab);
   return `<div class="sh-head">${edTab ? `<button class="icon" data-act="edhome" aria-label="Volver al panel">${ic("back")}</button>` : ""}<h2>${t ? t[1] : "Administración"}</h2>${edTab ? "" : `<button class="icon" data-act="close" aria-label="Cerrar">${ic("close")}</button>`}</div>
@@ -941,7 +987,7 @@ function edHome(){
   const t = today(), ws = weekStart(t);
   if (!ADM.loading && (ADM.from !== ws || Date.now() - ADM.at > 60000)) setTimeout(() => admLoad(ws, addDays(ws, 6)), 0);
   return `<div class="tiles">${ED_TABS.filter(x => x[0] !== "arch").map(([k, l, i]) => {
-      const sub = { rf:RFO.length + " RF oficiales", act:KC.acts.length + " y sus RF", sup:KC.sup.length + " nombres", cfg:"N° y jefe de operaciones", log:"Historial y restaurar", key:"Editor y equipo" }[k];
+      const sub = { rf:RFO.length + " RF oficiales", act:KC.acts.length + " y sus RF", sup:KC.sup.length + " nombres", cfg:"N° y jefe de operaciones", otg:"Qué áreas van juntas", log:"Historial y restaurar", key:"Editor y equipo" }[k];
       return `<button data-act="edtab" data-t="${k}">${ic(i)}<b>${l}</b><small>${esc(sub)}</small></button>`; }).join("")}</div>
     <h3 class="sect" style="margin-top:20px">Hoy<small>${esc(dLong(t))}</small></h3>${admTodayHtml()}
     <div class="list" style="margin-top:16px"><button class="li" data-act="edtab" data-t="arch"><span class="ico">${ic("archive")}</span><span class="in"><b>Archivo completo</b><small>Todos los RIT por semana. Descarga la semana en ZIP.</small></span>${ic("chev", "chev")}</button></div>`;
@@ -993,6 +1039,7 @@ function drawEditor(){
   else if (edTab === "act") body = edView && edView.act !== undefined ? edActForm(edView.act) : edActList();
   else if (edTab === "sup") body = edSup();
   else if (edTab === "cfg") body = edCfg();
+  else if (edTab === "otg") body = edOtg();
   else if (edTab === "log") body = `<div id="logbox"><p class="msg">Cargando cambios…</p></div>`;
   else if (edTab === "key") body = edKeys();
   const y = panel.dataset.kind === "ed" && edTab === drawEditor.last ? (($("#edbody") || {}).scrollTop || 0) : 0; drawEditor.last = edTab;
@@ -1006,6 +1053,7 @@ function edFoot(){
   if (edTab === "rf" && edView && edView.rf) return `<div class="sh-foot"><button class="btn" data-act="edback">Volver</button><button class="btn primary" data-act="edsaverf">Guardar para todos</button></div>`;
   if (edTab === "act" && edView && edView.act !== undefined) return `<div class="sh-foot"><button class="btn" data-act="edback">Volver</button><button class="btn primary" data-act="edsaveact">Guardar para todos</button></div>`;
   if (edTab === "sup") return `<div class="sh-foot"><button class="btn primary" data-act="edsavesup">Guardar lista</button></div>`;
+  if (edTab === "otg") return `<div class="sh-foot"><button class="btn primary" data-act="edsaveotg">Guardar</button></div>`;
   if (edTab === "cfg") return `<div class="sh-foot"><button class="btn primary" data-act="edsavecfg">Guardar datos del contrato</button></div>`;
   return "";
 }
@@ -1069,6 +1117,14 @@ function edCfg(){
     [["gerencia","Gerencia"],["superint","Superintendencia / Dirección"],["eecc","Nombre de EECC"],["contrato","N° Contrato"],["nombreContrato","Nombre del Contrato"],["jefeOps","Jefe de operaciones (firma en la OT)"]]
       .map(([k, l]) => `<label class="fld"><span>${l}</span><input type="text" id="c_${k}" value="${esc(c[k] || "")}" autocomplete="off"></label>`).join("");
 }
+// Qué áreas del itemizado comparten una misma OT (por ejemplo, si las firma la misma persona)
+function edOtg(){
+  const g = (KC.cfg && KC.cfg.otGrupos) || {};
+  const names = [...new Set(AREA_LIST.concat(Object.values(g).filter(Boolean)))];
+  return `<p class="note">Cada área sale en su propia OT. Si dos o más áreas las firma la misma persona, escribe el mismo nombre de OT en todas ellas y saldrán juntas. Vacío = su propia OT.</p>
+    <datalist id="otnames">${names.map(n => `<option value="${esc(n)}">`).join("")}</datalist>
+    ${AREA_LIST.map((a, i) => `<label class="fld"><span>${esc(a)}</span><input type="text" id="og_${i}" list="otnames" value="${esc(g[a] || "")}" placeholder="Su propia OT" autocomplete="off"></label>`).join("")}`;
+}
 function edKeys(){
   return `<p class="note">La clave del equipo es la que usan los supervisores para guardar los RIT en la nube. Mínimo 6 caracteres.</p>
     <label class="fld"><span>Nueva clave mía (${esc(ED.nombre)})</span><input type="password" id="k_yo" autocomplete="new-password"></label>
@@ -1076,7 +1132,8 @@ function edKeys(){
     <label class="fld"><span>Nueva clave del equipo</span><input type="password" id="k_equipo" autocomplete="new-password"></label>
     <button class="ghost" data-act="keysave" data-q="equipo">Cambiar clave del equipo</button>`;
 }
-const FIELD_NAMES = { riesgo:"riesgo", cons_tipo:"tipo de consecuencia", consecuencia:"consecuencia", controles:"controles", nombre:"nombre", area:"área", rf:"RF", activo:"visible" };
+const FIELD_NAMES = { otGrupos:"grupos de OT", gerencia:"gerencia", superint:"superintendencia", eecc:"EECC", contrato:"N° de contrato", nombreContrato:"nombre del contrato", jefeOps:"jefe de operaciones", riesgo:"riesgo", cons_tipo:"tipo de consecuencia", consecuencia:"consecuencia", controles:"controles", nombre:"nombre", area:"área", rf:"RF", activo:"visible" };
+const showVal = v => Array.isArray(v) ? v.join(", ") : v && typeof v === "object" ? (Object.keys(v).map(k => k + " → " + v[k]).join("; ") || "cada área en su propia OT") : (v == null ? "" : v);
 async function loadLog(){
   const box = $("#logbox"); if (!box) return;
   try {
@@ -1087,7 +1144,7 @@ async function loadLog(){
       const what = r.tabla === "rf" ? "RF" + r.clave : r.tabla === "actividad" ? "Actividad " + r.clave : r.tabla === "supervisores" ? "Lista de supervisores" : r.tabla === "contrato" ? "Datos del contrato" : "Clave " + (r.clave === "equipo" ? "del equipo" : "personal");
       let changed = [], diff = "";
       if (r.antes && r.despues && typeof r.antes === "object" && !Array.isArray(r.antes)) {
-        Object.keys(r.despues).forEach(k => { if (k === "code") return; const a = JSON.stringify(r.antes[k]), b = JSON.stringify(r.despues[k]); if (a !== b) { changed.push(FIELD_NAMES[k] || k); diff += `<div class="diff"><b>${esc(FIELD_NAMES[k] || k)}</b><div class="old">Antes: ${esc(Array.isArray(r.antes[k]) ? r.antes[k].join(", ") : r.antes[k])}</div><div class="new">Ahora: ${esc(Array.isArray(r.despues[k]) ? r.despues[k].join(", ") : r.despues[k])}</div></div>`; } });
+        Object.keys(r.despues).forEach(k => { if (k === "code") return; const a = JSON.stringify(r.antes[k]), b = JSON.stringify(r.despues[k]); if (a !== b) { changed.push(FIELD_NAMES[k] || k); diff += `<div class="diff"><b>${esc(FIELD_NAMES[k] || k)}</b><div class="old">Antes: ${esc(showVal(r.antes[k]))}</div><div class="new">Ahora: ${esc(showVal(r.despues[k]))}</div></div>`; } });
       } else if (r.tabla === "supervisores") { diff = `<div class="diff"><div class="old">Antes: ${esc((r.antes || []).join(", "))}</div><div class="new">Ahora: ${esc((r.despues || []).join(", "))}</div></div>`; }
       else if (!r.antes && r.despues) changed.push("creada");
       const canRestore = (r.tabla === "rf" || r.tabla === "actividad") && r.antes;
@@ -1176,6 +1233,14 @@ document.addEventListener("click", async e => {
   const act = el.dataset.act, d = D();
   switch (act) {
     case "tab": PV = null; go(el.dataset.v); break;
+    case "otmove": otMoveSheet(+el.dataset.i); break;
+    case "otto": { const a = d.acts[+el.dataset.i]; if (!a) break; const k = el.dataset.k;
+      if (!k) delete a.ot; else a.ot = k; persist(true); const back = fromPreview; fromPreview = false;
+      sheet.hidden = true; panel.innerHTML = ""; document.body.style.overflow = ""; render();
+      const g = otGroups(d).find(x => x.acts.some(y => y.a === a)); toast(`Ahora va en la OT ${g ? g.n : ""}${g && g.key ? ": " + g.key : ""}`);
+      if (back) { previewDoc = "ot"; openPreview(); } else if (otMoveSheet.from === "ot") drawSecSheet("ot"); break; }
+    case "ottipo": { const inf = otInfoOf(d, el.dataset.k); inf.tipo = inf.tipo === el.dataset.val ? "" : el.dataset.val; persist(true); rerender(); break; }
+    case "otview": { previewDoc = "ot"; const n = +el.dataset.n; await openPreview(); const pi = otPageMap(d).findIndex(p => p.g.n === n); const cv = document.querySelectorAll("#pages canvas")[pi]; if (cv) cv.scrollIntoView({ block:"start" }); break; }
     case "goform": go("form", el.dataset.step !== undefined ? +el.dataset.step : STEP); break;
     case "step": STEP = +el.dataset.s; render(); window.scrollTo({ top:0 }); break;
     case "next": STEP = Math.min(STEPS.length - 1, STEP + 1); render(); window.scrollTo({ top:0 }); break;
@@ -1287,7 +1352,9 @@ document.addEventListener("click", async e => {
     case "supdel": edView.sup.splice(+el.dataset.i, 1); drawEditor(); break;
     case "supup": { const i = +el.dataset.i; if (i > 0) { const t = edView.sup[i - 1]; edView.sup[i - 1] = edView.sup[i]; edView.sup[i] = t; } drawEditor(); break; }
     case "edsavesup": { const ok = await edSave("rit_guardar_supervisores", { p_lista:edView.sup }, "Lista de supervisores guardada"); if (ok) { edView = null; drawEditor(); } break; }
-    case "edsavecfg": { const v = {}; ["gerencia","superint","eecc","contrato","nombreContrato","jefeOps"].forEach(k => v[k] = ($("#c_" + k).value || "").trim());
+    case "edsaveotg": { const og = {}; AREA_LIST.forEach((a, i) => { const v = (($("#og_" + i) || {}).value || "").trim(); if (v && v !== a) og[a] = v; });
+      const ok = await edSave("rit_guardar_config", { p_valor:Object.assign({}, KC.cfg, { otGrupos:og }) }, "Grupos de OT guardados: todos los verán al abrir la app"); if (ok) drawEditor(); break; }
+    case "edsavecfg": { const v = Object.assign({}, KC.cfg); ["gerencia","superint","eecc","contrato","nombreContrato","jefeOps"].forEach(k => v[k] = ($("#c_" + k).value || "").trim());
       await edSave("rit_guardar_config", { p_valor:v }, "Datos del contrato guardados"); break; }
     case "restore": { const r = (window.__ritLog || [])[+el.dataset.idx]; if (!r || !r.antes) break; const a = r.antes; let ok;
       if (r.tabla === "rf") ok = await edSave("rit_guardar_rf", { p_code:a.code, p_nombre:a.nombre, p_riesgo:a.riesgo, p_cons_tipo:a.cons_tipo || "", p_consecuencia:a.consecuencia, p_controles:a.controles }, "Se restauró el texto anterior");
@@ -1308,11 +1375,13 @@ document.addEventListener("change", e => {
   if (el.dataset.act === "rev") { previewRev = el.checked; drawPreview(); return; }
   if (el.id === "f_t" || el.id === "x_t") { updateFits(); return; }
   if (el.id === "a_area") { const w = $("#a_newarea_w"); if (w) w.hidden = el.value !== "__nueva"; const v = edView && edView.draft; if (v && v.nuevo && el.value !== "__nueva") { const cd = $("#a_code"); if (cd) cd.value = nextCode(el.value); } return; }
+  if (el.dataset.otarea !== undefined) { learn("areaEsp", el.value); persist(true); return; }
   if (el.dataset.bind) { if (el.dataset.auto) learn(el.dataset.auto, el.value); persist(true); if (el.dataset.rerender) render(); }
 });
 document.addEventListener("input", e => {
   const el = e.target;
   if (el.dataset.fit) { updateFits(); return; }
+  if (el.dataset.otarea !== undefined) { otInfoOf(D(), el.dataset.otarea).areaEsp = el.value; persist(); showSug(el); return; }
   if (!el.dataset.bind) return;
   let v = el.value; if (el.dataset.num !== undefined) v = parseInt(v.replace(/\D/g, ""), 10) || 0;
   setPath(D(), el.dataset.bind, v); persist();
@@ -1329,7 +1398,7 @@ function showSug(inp){
   const box = document.createElement("div"); box.className = "sug";
   box.innerHTML = list.map(s => `<button type="button" data-v="${esc(s)}">${esc(s)}</button>`).join("");
   box.addEventListener("pointerdown", ev => { const b = ev.target.closest("button"); if (!b) return; ev.preventDefault();
-    inp.value = b.dataset.v; setPath(D(), inp.dataset.bind, inp.value); learn(key, inp.value); persist(true); hideSug(inp); if (inp.dataset.rerender) render(); else inp.blur(); });
+    inp.value = b.dataset.v; if (inp.dataset.otarea !== undefined) otInfoOf(D(), inp.dataset.otarea).areaEsp = inp.value; else setPath(D(), inp.dataset.bind, inp.value); learn(key, inp.value); persist(true); hideSug(inp); if (inp.dataset.rerender) render(); else inp.blur(); });
   inp.parentNode.appendChild(box);
 }
 function hideSug(inp){ const p = inp.parentNode; if (p) p.querySelectorAll(".sug").forEach(x => x.remove()); }

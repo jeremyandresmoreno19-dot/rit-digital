@@ -11,6 +11,8 @@ Reunión de Inicio de Turno (RIT) y Orden de Trabajo (OT) de MISPA en el celular
 - **Equipo:** los RIT de los demás supervisores por día, terminados y en curso. Solo se ven; se pueden descargar o usar como base.
 - **Admin** (arriba a la derecha): pide la clave de editor. Catálogo, quién hizo su RIT hoy y el archivo semanal en ZIP.
 - El RIT se llena por pasos: Turno, Actividades, Preparados, OT y Cierre. Cada cambio se guarda solo.
+- El PDF del RIT sale en el formato naranja de la GCSSO (cartilla 2026), con el reverso de guía de consulta.
+- La OT se separa sola por área (una OT por área); en el paso OT se puede mover cada actividad a otra OT.
 
 ## Cómo está armado
 - `index.html`: la app; `config.js`: conexión a Supabase (proyecto `ujbkdhjhetechdurqsgf`, clave pública anon); `sw.js` y `manifest.webmanifest`: para que abra sin señal y se instale.

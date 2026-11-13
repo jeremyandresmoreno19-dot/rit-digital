@@ -34,10 +34,11 @@ html=f'''<!doctype html>
 <script>
 {open('data.js').read()}
 {open('pdfbuild2.js').read()}
+{open('pdfbuild3.js').read().replace('if (typeof module !== "undefined") module.exports = { RIT3, ritPaginate3, buildRit3 };', '')}
 {open('pdfbuild_ot.js').read()}
 const LOGO_UI = "{logo}";
 const LOGO_PDF_B64 = "{base64.b64encode(open('assets/logo_pdf.png','rb').read()).decode()}";
-const REVERSO_B64 = "{base64.b64encode(open('assets/reverso.pdf','rb').read()).decode()}";
+const RIT_TPL_B64 = "{base64.b64encode(open('assets/rit_formato.pdf','rb').read()).decode()}";
 const OT_B64 = "{base64.b64encode(open('assets/ot_original.pdf','rb').read()).decode()}";
 </script>
 <script>

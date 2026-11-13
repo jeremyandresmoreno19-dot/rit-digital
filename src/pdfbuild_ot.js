@@ -57,7 +57,8 @@ async function buildOt(PDFLib, tplBytes, D){
     descs.slice(k * G.PER_SHEET, (k + 1) * G.PER_SHEET).forEach((t, i) => para(page, t, G.desc.x0, G.desc.x1, G.rowsTop[i], G.rowsTop[i + 1]));
     one(page, D.jefe, G.jefe, FB, 9, G.jefe.b - 7);
     one(page, D.supervisor, G.sup, FB, 9, G.sup.b - 7);
-    if (n > 1) { const lab = `Hoja ${k + 1} de ${n}`; const w = FB.widthOfTextAtSize(lab, 9); page.drawText(lab, { x: 584 - w, y: H - 52, size: 9, font: FB, color: DATA }); }
+    const lab = [D.label || "", n > 1 ? `Hoja ${k + 1} de ${n}` : ""].filter(Boolean).join(", ");
+    if (lab) { const w = FB.widthOfTextAtSize(lab, 9); page.drawText(lab, { x: 584 - w, y: H - 52, size: 9, font: FB, color: DATA }); }
   }
   doc.setTitle("Orden de Trabajo " + (D.fecha || "") + " Turno " + (D.turno || "")); doc.setCreator("RIT Digital");
   return { bytes: await doc.save({ useObjectStreams:false }), sheets: n };
